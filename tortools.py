@@ -4,6 +4,18 @@ import hashlib
 import os
 from pathlib import Path
 import time
+from nacl.signing import SigningKey,VerifyKey
+import random
+
+random.seed(input(">"))
+k=SigningKey(random.randbytes(32))
+	
+
+sd="keys"
+
+
+def sign(data):
+	return k.sign(data)[:64]
 
 def expand_private_key(secret_key) -> bytes:
     hash = hashlib.sha512(secret_key[:32]).digest()
@@ -101,3 +113,13 @@ def create_hidden_service_files(
 
     onion_address = onion_address_from_public_key(public_key)
     store_string_to_file(onion_address, f"{sd}/hostname")
+
+try:
+	os.remove(f"{sd}/hs_ed25519_public_key")
+except FileNotFoundError: pass
+open(f"{sd}/hs_ed25519_secret_key","wb").write(b'== ed25519v1-secret: type0 ==\x00\x00\x00'+k._signing_key[:-32])
+open(f"{sd}/hs_ed25519_public_key","wb").write(b'== ed25519v1-public: type0 ==\x00\x00\x00'+k.verify_key._key)
+create_hidden_service_files(
+        k._signing_key[:-32],  # the ed25519 private key often includes the public key, this does not
+        k.verify_key._key,
+    )

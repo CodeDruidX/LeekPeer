@@ -1,8 +1,10 @@
 from tortools import * 
-import requests
-from requests_tor import RequestsTor
+import config as cfg
+import requests				#pip install requests
+from requests_tor import RequestsTor	#pip install requests-tor
 rt = RequestsTor(tor_ports=(9050,))
 import os
+import re
 
 basebase=['!', '#', '$', '%', '&', '(', ')', '*', '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~']
 
@@ -38,7 +40,12 @@ def onion(pub):return onion_address_from_public_key(pub)
 
 def deploy(file):
 	dat=open(file,"rb").read()
-	name=make(dat)+"."+os.path.basename(file).split(".",1)[1]
+	if len(os.path.basename(file).split(".",1)) == 1:
+		res=""
+	else:
+		res=os.path.basename(file).split(".",1)[1]
+
+	name=make(dat)+"."+res
 	try: os.mkdir("storage")
 	except FileExistsError: pass
 	open(f"storage/{name}","wb").write(dat)
@@ -48,14 +55,24 @@ def load(name:str,data:bytes):
 		try: os.mkdir("storage")
 		except FileExistsError: pass
 		open(f"storage/{os.path.basename(name)}","wb").write(data)
+		return True
+	return False
 
 def download(url,tor=True):
 	local_filename = url.split('/')[-1]
+
+	if len(os.path.basename(local_filename).split(".",1)) == 1:
+		if not "" in cfg.allowed_res: return False
+	else:
+		if not os.path.basename(file).split(".",1)[1] in cfg.allowed_res: return False
+
 	b=b""
 	r = (rt if tor else requests).get(url, stream=True)
 	for chunk in r.iter_content(chunk_size=1024):
 		if chunk: b+=chunk
-	load(local_filename,b)
+		if len(b)>=cfg.max_file_kb_size*1024: return False
+	print(local_filename,b)
+	return load(local_filename,b)
 
 def catalouge(url,tor=True):
 	res=(rt if tor else requests).get(url)
@@ -65,3 +82,32 @@ def catalouge(url,tor=True):
 
 def unknown(c):
 	return set([i for i in c])-set(os.listdir("storage"))
+
+
+
+def sync(url,tor=True):
+	if cfg.blacklist_enabled and url in cfg.blacklist: return False
+	try:
+		c=catalouge(url,tor)
+	except:
+		print("Malformed domain",url)
+		return False
+	u=list(unknown(c))
+	print("Downloading",len(u),"files from",url,"with",len(c),"files")
+	for i in u:
+		try:
+			download(url+"/"+i,tor)
+			print("Loaded",i)
+		except: print("Malformed",i)
+
+
+def walker(tor=True):
+	urls=set()
+	for i in os.listdir("storage"):
+		urls.update({"http://"+onion(b85_2_b(i[80:120]))})
+	for i in list(urls): sync(i,tor)
+
+
+def serve():
+	os.system("start tor -f torrc")
+	os.system("start python -m http.server 8765 -d storage")
