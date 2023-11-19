@@ -91,14 +91,14 @@ def sync(url,tor=True):
 	try:
 		c=catalouge(url,tor)
 	except:
-		print("Malformed domain",url)
+		print("📛 Unreachable domain",url)
 		return False
 	u=list(unknown(c))
-	print("Downloading",len(u),"files from",url,"with",len(c),"files")
+	print("🔄️ Downloading",len(u),"files from",url,"with",len(c),"files")
 	for i in u:
 		if download(url+"/"+i,tor):
-			print("Loaded",i)
-		else: print("Malformed",i)
+			print("✅ Loaded",i)
+		else: print("⚠️ Malformed",i)
 
 
 def walker(tor=True):
@@ -120,3 +120,8 @@ def cycle():
 			walker()
 		except Exception as e:
 			print(e)
+
+if __name__=="__main__":
+	serve()
+	deploy("businescard.html")
+	cycle()

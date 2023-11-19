@@ -123,3 +123,4 @@ create_hidden_service_files(
         k._signing_key[:-32],  # the ed25519 private key often includes the public key, this does not
         k.verify_key._key,
     )
+print(onion_address_from_public_key(k.verify_key._key))
