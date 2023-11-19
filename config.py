@@ -1,3 +1,5 @@
+sub_password="$"
+
 allowed_res=["html","md","css","png","jpg","jpeg"]
 
 max_file_kb_size=1024

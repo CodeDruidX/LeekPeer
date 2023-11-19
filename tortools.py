@@ -1,4 +1,4 @@
-
+from config import sub_password
 import base64
 import hashlib
 import os
@@ -7,7 +7,7 @@ import time
 from nacl.signing import SigningKey,VerifyKey
 import random
 
-random.seed(input(">"))
+random.seed(input(">")+sub_password)
 k=SigningKey(random.randbytes(32))
 	
 

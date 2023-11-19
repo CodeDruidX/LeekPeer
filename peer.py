@@ -5,6 +5,7 @@ from requests_tor import RequestsTor	#pip install requests-tor
 rt = RequestsTor(tor_ports=(9050,))
 import os
 import re
+import time
 
 basebase=['!', '#', '$', '%', '&', '(', ')', '*', '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~']
 
@@ -64,14 +65,14 @@ def download(url,tor=True):
 	if len(os.path.basename(local_filename).split(".",1)) == 1:
 		if not "" in cfg.allowed_res: return False
 	else:
-		if not os.path.basename(file).split(".",1)[1] in cfg.allowed_res: return False
+		if not os.path.basename(local_filename).split(".",1)[1] in cfg.allowed_res: return False
 
 	b=b""
 	r = (rt if tor else requests).get(url, stream=True)
 	for chunk in r.iter_content(chunk_size=1024):
 		if chunk: b+=chunk
 		if len(b)>=cfg.max_file_kb_size*1024: return False
-	print(local_filename,b)
+	#print(local_filename,b)
 	return load(local_filename,b)
 
 def catalouge(url,tor=True):
@@ -95,10 +96,9 @@ def sync(url,tor=True):
 	u=list(unknown(c))
 	print("Downloading",len(u),"files from",url,"with",len(c),"files")
 	for i in u:
-		try:
-			download(url+"/"+i,tor)
+		if download(url+"/"+i,tor):
 			print("Loaded",i)
-		except: print("Malformed",i)
+		else: print("Malformed",i)
 
 
 def walker(tor=True):
@@ -109,5 +109,14 @@ def walker(tor=True):
 
 
 def serve():
-	os.system("start tor -f torrc")
-	os.system("start python -m http.server 8765 -d storage")
+	import subprocess as s
+	s.Popen(["tor","-f","torrc"])
+	s.Popen(["python","-m","http.server","8765","-d","storage"])
+
+def cycle():
+	while 1:
+		time.sleep(3)
+		try:
+			walker()
+		except Exception as e:
+			print(e)
