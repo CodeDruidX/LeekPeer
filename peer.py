@@ -111,7 +111,7 @@ def walker(tor=True):
 def serve():
 	import subprocess as s
 	s.Popen(["tor","-f","torrc"])
-	s.Popen(["python","-m","http.server","8765","-d","storage"])
+	#s.Popen(["python","-m","http.server","8765","-d","storage"])
 
 def cycle():
 	while 1:
@@ -121,7 +121,77 @@ def cycle():
 		except Exception as e:
 			print(e)
 
+
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
+import bisect 
+import os
+import re
+
+def insert(list, n):
+    bisect.insort(list, n) 
+    return list
+def req(q):
+	reg=re.compile(q,flags=re.IGNORECASE)
+	bst=[]
+	for i in os.listdir("storage"):
+		if ".html" in i:
+			with open("storage/"+i,"r",encoding="utf8") as f:
+				c=f.read()
+				m=reg.findall(c)		
+				insert(bst,(len(m),i,onion(b85_2_b(i[80:120]))))
+	return list(reversed(bst))
+
+
+
+from http.server import SimpleHTTPRequestHandler
+from http.server import HTTPServer
+
+class HttpGetHandler(SimpleHTTPRequestHandler):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, directory="storage", **kwargs)
+	def do_GET(self):
+		if destroy: exit()
+		if not urlparse(self.path).query:
+			super().do_GET()
+			return
+		
+		inp=parse_qs(urlparse(self.path).query)["q"][0]
+		self.send_response(200)
+		self.send_header('Content-type', 'text/html; charset=utf-8')
+		self.end_headers()
+		self.wfile.write('<html><head>'.encode("utf-8"))
+		self.wfile.write('<title>LeekViewer</title></head>'.encode())
+		self.wfile.write(f'<center><h1>🌐 Most relevant pages by query [{inp}]</h1></center>'.encode())
+		bst=req(inp)
+
+		for i in range(min(len(bst),10)):
+			i=bst[i]
+			self.wfile.write(f'<hr><center>{i[0]} matches | Name: <a href=\"{i[1]}\">{i[1][:10]}</a> | Author: {i[2]}</center>'.encode())
+			self.wfile.write(open(f"storage/{i[1]}","r",encoding="utf-8").read().encode())
+		self.wfile.write('</html>'.encode())
+
+
+def run(server_class=HTTPServer, handler_class=HttpGetHandler):
+  server_address = ('', 8765)
+  httpd = server_class(server_address, handler_class)
+  try:
+      httpd.serve_forever()
+  except KeyboardInterrupt:
+      httpd.server_close()
+
+import threading as t
+th=t.Thread(target=run)
+destroy=False
 if __name__=="__main__":
+	print("Starting...")
+	th.start()
+	print("HTTP server hosted...")
 	serve()
+	print("Tor connection...")
 	deploy("businescard.html")
-	cycle()
+	try:
+		cycle()
+	except KeyboardInterrupt:
+		print("Load or reload webpage of HTTP server to kill him\n\n"*20)
+		destroy=True
