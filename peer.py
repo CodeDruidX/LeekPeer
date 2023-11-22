@@ -183,7 +183,7 @@ class HttpGetHandler(SimpleHTTPRequestHandler):
 		self.wfile.write('<hr><center>The end</center></html>'.encode())
 
 def run(server_class=HTTPServer, handler_class=HttpGetHandler):
-  server_address = ('', 8765)
+  server_address = ('', 80)
   httpd = server_class(server_address, handler_class)
   try:
       httpd.serve_forever()

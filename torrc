@@ -1,6 +1,6 @@
 #SocksPort 0
 HiddenServiceDir keys
-HiddenServicePort 80 127.0.0.1:8765
+HiddenServicePort 80 127.0.0.1:80
 
 UseBridges 1
 ClientTransportPlugin obfs4 exec bridge.exe
