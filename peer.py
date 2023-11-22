@@ -115,15 +115,21 @@ def serve():
 
 def cycle():
 	while 1:
-		time.sleep(3)
+		#time.sleep(3)
 		try:
 			walker()
 		except Exception as e:
 			print(e)
-
+		try:
+			os.mkdir("input")
+		except: pass
+		for i in os.listdir("input"):
+			os.rename(f"input/{i}",i)
+			deploy(i)
+			os.remove(i)
 
 from urllib.parse import urlparse
-from urllib.parse import parse_qs
+from urllib.parse import unquote
 import bisect 
 import os
 import re
@@ -151,26 +157,30 @@ class HttpGetHandler(SimpleHTTPRequestHandler):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, directory="storage", **kwargs)
 	def do_GET(self):
+		print("Sth")
 		if destroy: exit()
 		if not urlparse(self.path).query:
 			super().do_GET()
+			print("Def")
 			return
-		
-		inp=parse_qs(urlparse(self.path).query)["q"][0]
+		print("Notgef")
+		inp=unquote(urlparse(self.path).query)
+		print(inp)
 		self.send_response(200)
 		self.send_header('Content-type', 'text/html; charset=utf-8')
 		self.end_headers()
-		self.wfile.write('<html><head>'.encode("utf-8"))
-		self.wfile.write('<title>LeekViewer</title></head>'.encode())
-		self.wfile.write(f'<center><h1>🌐 Most relevant pages by query [{inp}]</h1></center>'.encode())
+		print("stw")
+		self.wfile.write('<html><head><link rel="stylesheet" href="LЮRX46upn4GckfRDi8БetudrRnЛPMЧEoCБd7яНЬpwЙЖЪaGБёЦVЭЮЧLMnДhfLnцЗЦRjas3ЭBZuцЗbЛЗbxjKK3qЗuЧuёЛЛHЯRcfAЦwSц1ЛgknhdoMvPйZSЭX8R.css">'.encode("utf-8"))
+		self.wfile.write('<title>🌐LeekSearch</title></head>'.encode())
+		self.wfile.write(f'<div class="row"><div class="column"><h1>🌐Leek<b>Search</b></h1></div><div class="column"><center><h2> Query: [{inp}]</h2></center></div></div>'.encode())
+		print("strq")
 		bst=req(inp)
-
+		print("strretu")
 		for i in range(min(len(bst),10)):
 			i=bst[i]
 			self.wfile.write(f'<hr><center>{i[0]} matches | Name: <a href=\"{i[1]}\">{i[1][:10]}</a> | Author: {i[2]}</center>'.encode())
 			self.wfile.write(open(f"storage/{i[1]}","r",encoding="utf-8").read().encode())
-		self.wfile.write('</html>'.encode())
-
+		self.wfile.write('<hr><center>The end</center></html>'.encode())
 
 def run(server_class=HTTPServer, handler_class=HttpGetHandler):
   server_address = ('', 8765)
