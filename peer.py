@@ -108,14 +108,17 @@ def walker(tor=True):
 	for i in list(urls): sync(i,tor)
 
 
-def serve():
+def tor_serve():
 	import subprocess as s
 	s.Popen(["tor","-f","torrc"])
 	#s.Popen(["python","-m","http.server","8765","-d","storage"])
 
 def cycle():
+	for i in range(10,0,-1):
+		time.sleep(1)
+		print(i)
 	while 1:
-		#time.sleep(3)
+		time.sleep(1)
 		try:
 			walker()
 		except Exception as e:
@@ -157,23 +160,23 @@ class HttpGetHandler(SimpleHTTPRequestHandler):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, directory="storage", **kwargs)
 	def do_GET(self):
-		print("Sth")
+		print("GET request!")
 		if destroy: exit()
 		if not urlparse(self.path).query:
+			print("Default GET filehandler")
 			super().do_GET()
-			print("Def")
 			return
-		print("Notgef")
+		print("Parsing query")
 		inp=unquote(urlparse(self.path).query)
-		print(inp)
+		print("Query",inp)
 		self.send_response(200)
 		self.send_header('Content-type', 'text/html; charset=utf-8')
 		self.end_headers()
-		print("stw")
+		print("Building output header")
 		self.wfile.write('<html><head><link rel="stylesheet" href="LЮRX46upn4GckfRDi8БetudrRnЛPMЧEoCБd7яНЬpwЙЖЪaGБёЦVЭЮЧLMnДhfLnцЗЦRjas3ЭBZuцЗbЛЗbxjKK3qЗuЧuёЛЛHЯRcfAЦwSц1ЛgknhdoMvPйZSЭX8R.css">'.encode("utf-8"))
 		self.wfile.write('<title>🌐LeekSearch</title></head>'.encode())
 		self.wfile.write(f'<div class="row"><div class="column"><h1>🌐Leek<b>Search</b></h1></div><div class="column"><center><h2> Query: [{inp}]</h2></center></div></div>'.encode())
-		print("strq")
+		print("Results...")
 		bst=req(inp)
 		print("strretu")
 		for i in range(min(len(bst),10)):
@@ -197,7 +200,7 @@ if __name__=="__main__":
 	print("Starting...")
 	th.start()
 	print("HTTP server hosted...")
-	serve()
+	tor_serve()
 	print("Tor connection...")
 	deploy("businescard.html")
 	try:
